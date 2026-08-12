@@ -1,0 +1,69 @@
+PART 1 — Zone Job-Scheduler & Deadlock-Safety Engine (60 marks)
+
+import math
+from jobs import JOBS
+
+def run_priority(aging=False):
+    jobs = [dict(j) for j in JOBS]
+    n = len(jobs)
+    completed = 0
+    current_time = 0
+    executed = [False] * n
+    ready_since = [None] * n
+    
+    waiting_times = {}
+    
+    while completed < n:
+        for i in range(n):
+            if not executed[i] and jobs[i]["arrival_time"] <= current_time:
+                if ready_since[i] is None:
+                    ready_since[i] = current_time
+
+        ready = []
+        for i in range(n):
+            if not executed[i] and jobs[i]["arrival_time"] <= current_time:
+                ticks_waited = current_time - ready_since[i]
+                if not aging:
+                    eff_priority = jobs[i]["priority"]
+                else:
+                    eff_priority = max(1, jobs[i]["priority"] - math.floor(ticks_waited / 3))
+                ready.append((i, eff_priority, jobs[i]["arrival_time"], jobs[i]["job_id"]))
+                
+        if not ready:
+            current_time += 1
+            continue
+
+        # Sort by lowest effective priority; break ties by arrival_time, then job_id
+        ready.sort(key=lambda x: (x[1], x[2], x[3]))
+        selected_idx = ready[0][0]
+        
+        wt = current_time - jobs[selected_idx]["arrival_time"]
+        waiting_times[jobs[selected_idx]["job_id"]] = wt
+        
+        current_time += jobs[selected_idx]["burst_time"]
+        executed[selected_idx] = True
+        completed += 1
+
+    mode = "With Aging" if aging else "Without Aging (Static)"
+    print(f"\n================ Priority Scheduling ({mode}) ================")
+    for j_id, wt in sorted(waiting_times.items()):
+        print(f"Job {j_id:<8} | Waiting Time: {wt}")
+        
+    longest_job = max(waiting_times, key=waiting_times.get)
+    print(f"Single Longest-Waiting Job: {longest_job} ({waiting_times[longest_job]} ticks)")
+    return waiting_times, longest_job
+
+if __name__ == "__main__":
+    wt_no_aging, longest_no_aging = run_priority(aging=False)
+    wt_aging, longest_aging = run_priority(aging=True)
+    
+    print("\n--- Aging Verification ---")
+    print(f"No-aging longest job: {longest_no_aging} ({wt_no_aging[longest_no_aging]} ticks)")
+    print(f"Aging longest job    : {longest_aging} ({wt_aging[longest_aging]} ticks)")
+    print(f"Z3-J02 wait without aging: {wt_no_aging['Z3-J02']}")
+    print(f"Z3-J02 wait with aging   : {wt_aging['Z3-J02']}")
+    
+    assert longest_no_aging == "Z3-J02"
+    assert longest_aging != "Z3-J02"
+    assert wt_aging["Z3-J02"] < wt_no_aging["Z3-J02"]
+    print("Verification Passed: Aging prevented starvation for Z3-J02.")
