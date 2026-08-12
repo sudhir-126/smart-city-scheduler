@@ -70,10 +70,17 @@ To prevent Zone-B resources from directly accessing Zone-A resources:
 3. **Threat 3: Distributed Denial of Service (DDoS) on Ingress Endpoints**
    - *Mitigation:* Implement **VPC Ingress Rate-Limiting rules** and cloud-native volumetric DDoS protection (e.g., AWS Shield / Cloudflare).
   
-  Task 8: Justify Deployment Choice
-Chosen Production Scheduling Family: Non-Preemptive Priority Scheduling with Aging
-Selected Family: Priority Scheduling with Dynamic Aging is chosen for production deployment across the zone controllers.
-Cited Reasons Rejecting Alternative Families:
-Rejection of FCFS: FCFS exhibits a severe convoy effect on this dataset, producing the highest average waiting time of 13.12 ticks and an average turnaround time of 18.62 ticks, forcing critical low-burst safety tasks to wait behind heavy processing jobs.
-Rejection of SJF / SRTF Family: Although SRTF achieved the lowest average waiting time (6.00 ticks), both SJF and SRTF require exact advance knowledge of CPU burst times (8, 4, 9, 5, \dots), which cannot be known beforehand for dynamic IoT sensor workloads.
-Rejection of Round Robin Family: Round Robin introduces excessive context switching overhead. At quantum 3, the engine recorded 16 context switches across 17 dispatch slices, causing CPU cycles to be lost to OS switching overhead rather than processing real sensor data.
+## Task 8: Justify Deployment Choice
+
+### Chosen Production Scheduling Family: Non-Preemptive Priority Scheduling with Aging
+
+**Selected Family:** **Priority Scheduling with Dynamic Aging** is chosen for production deployment across the zone controllers.
+
+### Cited Reasons Rejecting Alternative Families:
+
+1. **Rejection of FCFS:** FCFS exhibits a severe convoy effect on this dataset, producing the **highest average waiting time of 13.12 ticks** and an **average turnaround time of 18.62 ticks**, forcing critical low-burst safety tasks to wait behind heavy processing jobs.
+
+2. **Rejection of SJF / SRTF Family:** Although SRTF achieved the lowest average waiting time (6.00 ticks), both SJF and SRTF require **exact advance knowledge of CPU burst times** (8, 4, 9, 5, ...), which cannot be known beforehand for dynamic IoT sensor workloads.
+
+3. **Rejection of Round Robin Family:** Round Robin introduces excessive context switching overhead. At quantum 3, the engine recorded **16 context switches across 17 dispatch slices**, causing CPU cycles to be lost to OS switching overhead rather than processing real sensor data.
+4.
