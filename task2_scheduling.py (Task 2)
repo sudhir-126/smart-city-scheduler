@@ -1,0 +1,131 @@
+PART 1 — Zone Job-Scheduler & Deadlock-Safety Engine (60 marks)
+
+from jobs import JOBS
+
+def print_table(title, results):
+    print(f"\n================ {title} ================")
+    print(f"{'Job ID':<10} | {'Arrival':<8} | {'Burst':<6} | {'Waiting Time':<12} | {'Turnaround Time':<15}")
+    print("-" * 65)
+    tot_wt = 0
+    tot_tat = 0
+    for r in results:
+        print(f"{r['job_id']:<10} | {r['arrival']:<8} | {r['burst']:<6} | {r['wt']:<12} | {r['tat']:<15}")
+        tot_wt += r['wt']
+        tot_tat += r['tat']
+    n = len(results)
+    avg_wt = tot_wt / n
+    avg_tat = tot_tat / n
+    print("-" * 65)
+    print(f"Average Waiting Time   : {avg_wt:.2f}")
+    print(f"Average Turnaround Time: {avg_tat:.2f}")
+    return avg_wt, avg_tat
+
+def run_fcfs():
+    # Tie-breaking rule: earlier arrival_time, then lower job_id
+    sorted_jobs = sorted(JOBS, key=lambda x: (x["arrival_time"], x["job_id"]))
+    current_time = 0
+    results = []
+    
+    for job in sorted_jobs:
+        if current_time < job["arrival_time"]:
+            current_time = job["arrival_time"]
+        wt = current_time - job["arrival_time"]
+        current_time += job["burst_time"]
+        tat = wt + job["burst_time"]
+        results.append({
+            "job_id": job["job_id"],
+            "arrival": job["arrival_time"],
+            "burst": job["burst_time"],
+            "wt": wt,
+            "tat": tat
+        })
+    return print_table("First-Come, First-Served (FCFS)", results)
+
+def run_sjf():
+    jobs = [dict(j) for j in JOBS]
+    completed = 0
+    n = len(jobs)
+    current_time = 0
+    executed = [False] * n
+    results = []
+    
+    while completed < n:
+        ready = []
+        for i in range(n):
+            if not executed[i] and jobs[i]["arrival_time"] <= current_time:
+                ready.append((i, jobs[i]))
+        if not ready:
+            current_time += 1
+            continue
+        
+        # Tie-breaking rule: shortest burst_time; break ties by arrival_time, then job_id
+        ready.sort(key=lambda x: (x[1]["burst_time"], x[1]["arrival_time"], x[1]["job_id"]))
+        idx, job = ready[0]
+        
+        wt = current_time - job["arrival_time"]
+        current_time += job["burst_time"]
+        tat = wt + job["burst_time"]
+        executed[idx] = True
+        completed += 1
+        
+        results.append({
+            "job_id": job["job_id"],
+            "arrival": job["arrival_time"],
+            "burst": job["burst_time"],
+            "wt": wt,
+            "tat": tat
+        })
+    return print_table("Non-Preemptive Shortest Job First (SJF)", results)
+
+def run_srtf():
+    jobs = [dict(j) for j in JOBS]
+    n = len(jobs)
+    rem_time = [j["burst_time"] for j in jobs]
+    completed = 0
+    current_time = 0
+    finish_time = [0] * n
+    
+    while completed < n:
+        ready = []
+        for i in range(n):
+            if jobs[i]["arrival_time"] <= current_time and rem_time[i] > 0:
+                ready.append(i)
+        if not ready:
+            current_time += 1
+            continue
+        
+        # Tie-breaking rule: shortest remaining time; break ties by arrival_time, then job_id
+        ready.sort(key=lambda i: (rem_time[i], jobs[i]["arrival_time"], jobs[i]["job_id"]))
+        idx = ready[0]
+        
+        rem_time[idx] -= 1
+        current_time += 1
+        
+        if rem_time[idx] == 0:
+            completed += 1
+            finish_time[idx] = current_time
+            
+    results = []
+    for i in range(n):
+        tat = finish_time[i] - jobs[i]["arrival_time"]
+        wt = tat - jobs[i]["burst_time"]
+        results.append({
+            "job_id": jobs[i]["job_id"],
+            "arrival": jobs[i]["arrival_time"],
+            "burst": jobs[i]["burst_time"],
+            "wt": wt,
+            "tat": tat
+        })
+    return print_table("Shortest Remaining Time First (SRTF)", results)
+
+if __name__ == "__main__":
+    fcfs_wt, _ = run_fcfs()
+    sjf_wt, _ = run_sjf()
+    srtf_wt, _ = run_srtf()
+    
+    print("\n--- Summary Verification ---")
+    print(f"FCFS Avg Waiting Time: {fcfs_wt:.2f}")
+    print(f"SJF Avg Waiting Time : {sjf_wt:.2f}")
+    print(f"SRTF Avg Waiting Time: {srtf_wt:.2f}")
+    assert srtf_wt < sjf_wt < fcfs_wt, "Ordering Verification Failed!"
+    print("Verification Passed: SRTF Avg WT < SJF Avg WT < FCFS Avg WT")
