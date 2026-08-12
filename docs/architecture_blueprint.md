@@ -83,4 +83,4 @@ To prevent Zone-B resources from directly accessing Zone-A resources:
 2. **Rejection of SJF / SRTF Family:** Although SRTF achieved the lowest average waiting time (6.00 ticks), both SJF and SRTF require **exact advance knowledge of CPU burst times** (8, 4, 9, 5, ...), which cannot be known beforehand for dynamic IoT sensor workloads.
 
 3. **Rejection of Round Robin Family:** Round Robin introduces excessive context switching overhead. At quantum 3, the engine recorded **16 context switches across 17 dispatch slices**, causing CPU cycles to be lost to OS switching overhead rather than processing real sensor data.
-4.
+  
