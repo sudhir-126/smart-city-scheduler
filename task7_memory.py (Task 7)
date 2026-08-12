@@ -1,0 +1,42 @@
+PART 1 — Zone Job-Scheduler & Deadlock-Safety Engine (60 marks)
+
+PAGE_SIZE = 1024
+PAGE_TABLE = {0: 5, 1: 2, 2: 9, 3: 1}
+SEGMENT_TABLE = {
+    0: (1000, 400),
+    1: (2200, 300),
+    2: (500, 150)
+}  # {segment: (base, limit)}
+
+def translate_paged(address):
+    page_num = address // PAGE_SIZE
+    offset = address % PAGE_SIZE
+    if page_num in PAGE_TABLE:
+        frame_num = PAGE_TABLE[page_num]
+        physical_address = (frame_num * PAGE_SIZE) + offset
+        return f"Address {address:<4} -> Physical Address: {physical_address}"
+    else:
+        return f"Address {address:<4} -> PAGE FAULT (Page {page_num} not present in PAGE_TABLE)"
+
+def translate_segmented(seg_offset_pair):
+    segment, offset = seg_offset_pair
+    if segment in SEGMENT_TABLE:
+        base, limit = SEGMENT_TABLE[segment]
+        if offset < limit:
+            physical_address = base + offset
+            return f"Segment ({segment}, {offset:<3}) -> Physical Address: {physical_address}"
+        else:
+            return f"Segment ({segment}, {offset:<3}) -> SEGMENTATION FAULT (Offset {offset} >= Limit {limit})"
+    else:
+        return f"Segment ({segment}, {offset:<3}) -> INVALID SEGMENT ACCESS"
+
+if __name__ == "__main__":
+    print("=== Paging Address Translation ===")
+    paged_addresses = [260, 1500, 3000, 5000]
+    for addr in paged_addresses:
+        print(translate_paged(addr))
+        
+    print("\n=== Segmentation Address Translation ===")
+    segmented_addresses = [(0, 150), (1, 350), (2, 100)]
+    for seg_pair in segmented_addresses:
+        print(translate_segmented(seg_pair))
