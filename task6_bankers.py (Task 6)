@@ -1,0 +1,79 @@
+PART 1 — Zone Job-Scheduler & Deadlock-Safety Engine (60 marks)
+
+AVAILABLE = [3, 3, 2]
+MAX_NEED = {
+    "P0": [7, 5, 3],
+    "P1": [3, 2, 2],
+    "P2": [9, 0, 2],
+    "P3": [2, 2, 2]
+}
+ALLOCATION = {
+    "P0": [0, 1, 0],
+    "P1": [2, 0, 0],
+    "P2": [3, 0, 2],
+    "P3": [2, 1, 1]
+}
+
+def compute_need():
+    need = {}
+    for p in MAX_NEED:
+        need[p] = [MAX_NEED[p][i] - ALLOCATION[p][i] for i in range(3)]
+    return need
+
+def is_safe(avail, alloc, need):
+    work = list(avail)
+    finish = {p: False for p in alloc}
+    safe_sequence = []
+    
+    while len(safe_sequence) < len(alloc):
+        found = False
+        for p in sorted(alloc.keys()):
+            if not finish[p]:
+                if all(need[p][i] <= work[i] for i in range(3)):
+                    for i in range(3):
+                        work[i] += alloc[p][i]
+                    finish[p] = True
+                    safe_sequence.append(p)
+                    found = True
+                    break
+        if not found:
+            return False, []
+    return True, safe_sequence
+
+def evaluate_request(process, request, avail, alloc, need):
+    print(f"\nEvaluating Request from {process}: {request}")
+    if any(request[i] > need[process][i] for i in range(3)):
+        print("DENIED: Process exceeded its declared maximum claim.")
+        return
+        
+    if any(request[i] > avail[i] for i in range(3)):
+        print("DENIED: Requested resources exceed currently available allocation.")
+        return
+
+    # Hypothetically allocate
+    temp_avail = [avail[i] - request[i] for i in range(3)]
+    temp_alloc = {p: list(alloc[p]) for p in alloc}
+    temp_need = {p: list(need[p]) for p in need}
+    
+    temp_alloc[process] = [temp_alloc[process][i] + request[i] for i in range(3)]
+    temp_need[process] = [temp_need[process][i] - request[i] for i in range(3)]
+    
+    safe, seq = is_safe(temp_avail, temp_alloc, temp_need)
+    if safe:
+        print(f"GRANTED: System remains in a SAFE state. Valid Safe Sequence: {seq}")
+    else:
+        print("DENIED: Granting request leaves system in an UNSAFE state (potential deadlock).")
+
+if __name__ == "__main__":
+    need_matrix = compute_need()
+    print("Computed Need Matrix:")
+    for p, val in need_matrix.items():
+        print(f"  {p}: {val}")
+        
+    safe, seq = is_safe(AVAILABLE, ALLOCATION, need_matrix)
+    print(f"\nInitial State Safety Check: Safe = {safe}")
+    print(f"Initial Valid Safe Sequence: {seq}")
+    
+    # Independent Request Evaluations
+    evaluate_request("P1", [1, 0, 2], AVAILABLE, ALLOCATION, need_matrix)
+    evaluate_request("P0", [2, 0, 2], AVAILABLE, ALLOCATION, need_matrix)
