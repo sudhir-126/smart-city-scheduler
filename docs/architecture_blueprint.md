@@ -70,11 +70,11 @@ To prevent Zone-B resources from directly accessing Zone-A resources:
 3. **Threat 3: Distributed Denial of Service (DDoS) on Ingress Endpoints**
    - *Mitigation:* Implement **VPC Ingress Rate-Limiting rules** and cloud-native volumetric DDoS protection (e.g., AWS Shield / Cloudflare).
   
-## Task 8: Justify Deployment Choice
+## Task 8: Production Deployment Justification
 
-### Chosen Production Scheduling Family: Non-Preemptive Priority Scheduling with Aging
+### Selected Production Family: Non-Preemptive Priority Scheduling with Aging
 
-**Selected Family:** **Priority Scheduling with Dynamic Aging** is chosen for production deployment across the zone controllers.
+**Production Choice:** **Priority Scheduling with Dynamic Aging** is chosen for production deployment across the zone controllers.
 
 ### Cited Reasons Rejecting Alternative Families:
 
