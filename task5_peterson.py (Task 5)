@@ -1,0 +1,95 @@
+PART 1 — Zone Job-Scheduler & Deadlock-Safety Engine (60 marks)
+
+import threading
+import time
+
+counter = 100
+
+flag = [False, False]
+turn = 0
+
+def unsynchronized_sub():
+    global counter
+    temp = counter
+    time.sleep(0.001)  # Force context switch
+    counter = temp - 40
+
+def unsynchronized_add():
+    global counter
+    temp = counter
+    time.sleep(0.001)  # Force context switch
+    counter = temp + 25
+
+def run_unsynchronized_demo():
+    print("\n=== Unsynchronized Counter Execution (5 Runs) ===")
+    results = []
+    for run in range(1, 6):
+        global counter
+        counter = 100
+        t1 = threading.Thread(target=unsynchronized_sub)
+        t2 = threading.Thread(target=unsynchronized_add)
+        t1.start()
+        t2.start()
+        t1.join()
+        t2.join()
+        results.append(counter)
+        print(f"Run {run}: Final Counter = {counter}")
+    return results
+
+def peterson_sub():
+    global counter, turn, flag
+    i = 0
+    j = 1
+    flag[i] = True
+    turn = j
+    while flag[j] and turn == j:
+        pass  # Busy wait
+    
+    # Critical Section
+    temp = counter
+    time.sleep(0.0001)
+    counter = temp - 40
+    
+    flag[i] = False
+
+def peterson_add():
+    global counter, turn, flag
+    i = 1
+    j = 0
+    flag[i] = True
+    turn = j
+    while flag[j] and turn == j:
+        pass  # Busy wait
+    
+    # Critical Section
+    temp = counter
+    time.sleep(0.0001)
+    counter = temp + 25
+    
+    flag[i] = False
+
+def run_peterson_demo():
+    print("\n=== Peterson's Algorithm Protected Execution (5 Runs) ===")
+    results = []
+    for run in range(1, 6):
+        global counter, flag, turn
+        counter = 100
+        flag = [False, False]
+        turn = 0
+        t1 = threading.Thread(target=peterson_sub)
+        t2 = threading.Thread(target=peterson_add)
+        t1.start()
+        t2.start()
+        t1.join()
+        t2.join()
+        results.append(counter)
+        print(f"Run {run}: Final Counter = {counter}")
+    return results
+
+if __name__ == "__main__":
+    unsync_res = run_unsynchronized_demo()
+    peterson_res = run_peterson_demo()
+    
+    assert any(val != 85 for val in unsync_res), "Unsynchronized demo failed to produce race conditions!"
+    assert all(val == 85 for val in peterson_res), "Peterson's algorithm failed to protect critical section!"
+    print("\nVerification Passed: Peterson's Algorithm enforced mutual exclusion across all 5 runs.")
